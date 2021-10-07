@@ -67,62 +67,62 @@ func main() {
 
 ## Insert statement
 ```golang
-    stmt := squel.Table("api.users")
-    stmt.Field("username", "jeppech")
-    stmt.Field("role", "admin")
-    // NilField are usefull, if the value could be nil.
-    // i.e if the value originates from an API request, that could have NULL properties
-    stmt.NilField("firstname", "Jeppe")
-    stmt.NilField("lastname", "Christiansen")
-    query_string, query_args := stmt.Insert()
+stmt := squel.Table("api.users")
+stmt.Field("username", "jeppech")
+stmt.Field("role", "admin")
+// NilField are usefull, if the value could be nil.
+// i.e if the value originates from an API request, that could have NULL properties
+stmt.NilField("firstname", "Jeppe")
+stmt.NilField("lastname", "Christiansen")
+query_string, query_args := stmt.Insert()
 
-    /**
-    query_string:
-        INSERT INTO api.users (username,role,firstname,lastname)
-        VALUES ($1,$2,$3,$4)
+/**
+query_string:
+    INSERT INTO api.users (username,role,firstname,lastname)
+    VALUES ($1,$2,$3,$4)
 
-    query_args:
-        [jeppech admin Jeppe Christiansen]
-    */
+query_args:
+    [jeppech admin Jeppe Christiansen]
+*/
 ```
 
 ## Update statement
 ```golang
-    stmt := squel.Table("api.users")
-    stmt.Field("email", "hello@example.com")
-    stmt.Field("role", "peasant")
-    stmt.Where("username = %s", "jeppech")
-    query_string, query_args := stmt.Update()
+stmt := squel.Table("api.users")
+stmt.Field("email", "hello@example.com")
+stmt.Field("role", "peasant")
+stmt.Where("username = %s", "jeppech")
+query_string, query_args := stmt.Update()
 
-    /**
-    query_string:
-        UPDATE api.users SET email = $1, role = $2
-        WHERE username = $3
+/**
+query_string:
+    UPDATE api.users SET email = $1, role = $2
+    WHERE username = $3
 
-    query_args:
-        [hello@example.com peasant jeppech]
-    */
+query_args:
+    [hello@example.com peasant jeppech]
+*/
 ```
 
 ## Group clause
 ```golang
-    stmt := Table("api.users")
-    stmt.WhereGroup(func(s *Statement) {
-        s.Or("username = %s", "jeppech")
-        s.Or("email = %s", "hello@example.com")
-    })
-    stmt.And("pswd = %s", "VerySekritPassw0rt")
-    query_string, query_args := stmt.Select("id")
+stmt := Table("api.users")
+stmt.WhereGroup(func(s *Statement) {
+    s.Or("username = %s", "jeppech")
+    s.Or("email = %s", "hello@example.com")
+})
+stmt.And("pswd = %s", "VerySekritPassw0rt")
+query_string, query_args := stmt.Select("id")
 
-    /**
-    query_string:
-        SELECT id FROM api.users
-        WHERE (
-            username = $1 OR
-            email = $2
-        ) AND pswd = $3
+/**
+query_string:
+    SELECT id FROM api.users
+    WHERE (
+        username = $1 OR
+        email = $2
+    ) AND pswd = $3
 
-    query_args:
-        [jeppech hello@example.com VerySekritPassw0rt]
-    */
+query_args:
+    [jeppech hello@example.com VerySekritPassw0rt]
+*/
 ```
