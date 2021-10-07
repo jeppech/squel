@@ -2,16 +2,20 @@ package squel
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 )
 
 type Condition struct {
-	context string
-	name    string
-	table   string
-	clause  string
-	args    []interface{}
+	context    string
+	name       string
+	table      string
+	clause     string
+	args       []interface{}
+	conditions []*Condition
+	sub        bool
+	last       bool
 }
 
 type TableField struct {
@@ -88,7 +92,7 @@ func (stmt *Statement) NilField(name string, value interface{}) *Statement {
 	return stmt
 }
 
-func (stmt *Statement) QueryCondition(name string, clause string, args ...interface{}) *Statement {
+func (stmt *Statement) queryCondition(name string, clause string, args ...interface{}) *Condition {
 	name = strings.ToUpper(name)
 	cond := &Condition{
 		context: "query",
@@ -99,32 +103,70 @@ func (stmt *Statement) QueryCondition(name string, clause string, args ...interf
 
 	stmt.conditions = append(stmt.conditions, cond)
 
+	return cond
+}
+
+func (stmt *Statement) queryGroupCondition(name string) *Condition {
+	name = strings.ToUpper(name)
+	cond := &Condition{
+		context: "query",
+		name:    name,
+	}
+
+	stmt.conditions = append(stmt.conditions, cond)
+	return cond
+}
+
+func (stmt *Statement) newGroupCondition(name string, cb func(s *Statement)) *Statement {
+	if len(stmt.conditions) == 0 && name != "WHERE" {
+		log.Panicln("first condition-clause of query must be WHERE")
+	}
+
+	cond := stmt.queryGroupCondition(name)
+	s := &Statement{}
+	cb(s)
+	cond.conditions = append(cond.conditions, s.conditions...)
 	return stmt
+}
+
+func (stmt *Statement) WhereGroup(c func(s *Statement)) *Statement {
+	return stmt.newGroupCondition("WHERE", c)
+}
+
+func (stmt *Statement) AndGroup(c func(s *Statement)) *Statement {
+	return stmt.newGroupCondition("AND", c)
+}
+
+func (stmt *Statement) OrGroup(c func(s *Statement)) *Statement {
+	return stmt.newGroupCondition("OR", c)
 }
 
 func (stmt *Statement) Where(clause string, args ...interface{}) *Statement {
 	if len(stmt.conditions) == 0 {
-		return stmt.QueryCondition("WHERE", clause, args...)
+		stmt.queryCondition("WHERE", clause, args...)
 	} else {
-		return stmt.And(clause, args...)
+		stmt.And(clause, args...)
 	}
+	return stmt
 }
 
 func (stmt *Statement) And(clause string, args ...interface{}) *Statement {
-	return stmt.QueryCondition("AND", clause, args...)
+	stmt.queryCondition("AND", clause, args...)
+	return stmt
 }
 
 func (stmt *Statement) Or(clause string, args ...interface{}) *Statement {
-	return stmt.QueryCondition("OR", clause, args...)
+	stmt.queryCondition("OR", clause, args...)
+	return stmt
 }
 
-func (stmt *Statement) Group(group string) *Statement {
+func (stmt *Statement) GroupBy(group string) *Statement {
 	stmt.group = fmt.Sprintf("GROUP BY %s", group)
 
 	return stmt
 }
 
-func (stmt *Statement) Order(fields string, direction string) *Statement {
+func (stmt *Statement) OrderBy(fields string, direction string) *Statement {
 	stmt.order = fmt.Sprintf("ORDER BY %s %s", fields, strings.ToUpper(direction))
 
 	return stmt
@@ -160,6 +202,28 @@ func (stmt *Statement) Ok() error {
 	return fmt.Errorf(errs)
 }
 
-func (stmt *Statement) error(err string) {
-	stmt.err = append(stmt.err, err)
+// func (stmt *Statement) error(err string) {
+// 	stmt.err = append(stmt.err, err)
+// }
+
+func argInList(item interface{}, args []interface{}) int {
+	for i, arg := range args {
+		if item == arg {
+			return i
+		}
+	}
+	return -1
+}
+
+func countArgs(conds []*Condition) int {
+	n := 0
+	for _, cond := range conds {
+		if len(cond.conditions) > 0 {
+			n = countArgs(cond.conditions)
+		} else {
+			n += len(cond.args)
+		}
+	}
+
+	return n
 }

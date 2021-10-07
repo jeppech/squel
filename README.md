@@ -103,3 +103,26 @@ func main() {
         [hello@example.com peasant jeppech]
     */
 ```
+
+## Group clause
+```golang
+    stmt := Table("api.users")
+    stmt.WhereGroup(func(s *Statement) {
+        s.Or("username = %s", "jeppech")
+        s.Or("email = %s", "hello@example.com")
+    })
+    stmt.And("pswd = %s", "VerySekritPassw0rt")
+    query_string, query_args := stmt.Select("id")
+
+    /**
+    query_string:
+        SELECT id FROM api.users
+        WHERE (
+            username = $1 OR
+            email = $2
+        ) AND pswd = $3
+
+    query_args:
+        [jeppech hello@example.com VerySekritPassw0rt]
+    */
+```

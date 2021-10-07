@@ -30,7 +30,7 @@ func (stmt *Statement) Update() (string, []interface{}) {
 	}
 
 	for _, cond := range conditions {
-		q_str, new_arg_i, new_args := renderCondition(cond, arg_i)
+		q_str, new_arg_i, new_args := renderCondition(cond, arg_i, arg_list)
 		arg_i = new_arg_i
 		arg_list = append(arg_list, new_args...)
 		q = fmt.Sprintf("%s %s", q, q_str)
