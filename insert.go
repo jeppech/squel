@@ -10,16 +10,16 @@ func (stmt *Statement) Insert() (string, []interface{}) {
 	q := "INSERT INTO %s (%s) VALUES (%s)"
 
 	item_cap := len(stmt.fields)
-	field_names := make([]string, item_cap)
-	field_arg := make([]string, item_cap)
-	arg_list := make([]interface{}, item_cap)
+	field_names := make([]string, 0, item_cap)
+	field_arg := make([]string, 0, item_cap)
+	arg_list := make([]interface{}, 0, item_cap)
 
 	arg_i := 1
 
-	for i, field := range stmt.fields {
-		field_names[i] = field.name
-		field_arg[i] = fmt.Sprintf("$%d", arg_i)
-		arg_list[i] = field.value
+	for _, field := range stmt.fields {
+		field_names = append(field_names, field.name)
+		field_arg = append(field_arg, fmt.Sprintf("$%d", arg_i))
+		arg_list = append(arg_list, field.value)
 
 		arg_i++
 	}
@@ -30,6 +30,8 @@ func (stmt *Statement) Insert() (string, []interface{}) {
 		q = fmt.Sprintf("%s %s", q, stmt.returning)
 	}
 
-	log.Printf("[debug][sql] %s", q)
+	if opts.Debug {
+		log.Printf("[debug][sql] %s - %+v", q, arg_list)
+	}
 	return q, arg_list
 }

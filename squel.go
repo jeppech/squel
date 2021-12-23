@@ -84,9 +84,10 @@ func (stmt *Statement) Field(name string, value interface{}) *Statement {
 	return stmt
 }
 
-func (stmt *Statement) NilField(name string, value interface{}) *Statement {
-	if value != nil && !reflect.ValueOf(value).IsNil() {
-		stmt.fields = append(stmt.fields, &TableField{name, value})
+// NilField will omit adding the field to the SQL statement, if the passed value is nil.
+func (stmt *Statement) NilField(field string, value interface{}) *Statement {
+	if reflect.ValueOf(value).IsValid() {
+		stmt.fields = append(stmt.fields, &TableField{field, value})
 	}
 
 	return stmt
@@ -94,6 +95,11 @@ func (stmt *Statement) NilField(name string, value interface{}) *Statement {
 
 func (stmt *Statement) queryCondition(name string, clause string, args ...interface{}) *Condition {
 	name = strings.ToUpper(name)
+
+	if len(stmt.conditions) == 0 {
+		name = "WHERE"
+	}
+
 	cond := &Condition{
 		context: "query",
 		name:    name,
@@ -141,15 +147,13 @@ func (stmt *Statement) OrGroup(c func(s *Statement)) *Statement {
 	return stmt.newGroupCondition("OR", c)
 }
 
+// Where will render a WHERE clause to the statement. Subsequent calls to this method, for the same statement, will render an AND clause.
 func (stmt *Statement) Where(clause string, args ...interface{}) *Statement {
-	if len(stmt.conditions) == 0 {
-		stmt.queryCondition("WHERE", clause, args...)
-	} else {
-		stmt.And(clause, args...)
-	}
+	stmt.queryCondition("WHERE", clause, args...)
 	return stmt
 }
 
+// And will render an AND clause to the statement. This will render a WHERE clause, if it's called before the Where method.
 func (stmt *Statement) And(clause string, args ...interface{}) *Statement {
 	stmt.queryCondition("AND", clause, args...)
 	return stmt
