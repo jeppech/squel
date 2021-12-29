@@ -9,7 +9,7 @@ import (
 func (stmt *Statement) Update() (string, []interface{}) {
 	item_cap := len(stmt.fields)
 	fields := make([]string, 0, item_cap)
-	arg_list := make([]interface{}, 0, item_cap)
+	var arg_list []interface{}
 	arg_i := 1
 
 	for _, field := range stmt.fields {
@@ -30,7 +30,7 @@ func (stmt *Statement) Update() (string, []interface{}) {
 	if len(conditions) > 0 {
 		var new_args []interface{}
 		q, new_args, _ = renderConditions(q, conditions, arg_i)
-		arg_list = append(arg_list, new_args)
+		arg_list = append(arg_list, new_args...)
 	}
 
 	if opts.Debug {
