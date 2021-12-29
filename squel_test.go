@@ -38,3 +38,26 @@ func TestDelete(t *testing.T) {
 	fmt.Println(q)
 	fmt.Println(args)
 }
+
+func TestGrouped(t *testing.T) {
+	search := "something"
+	stmt := Table("public.users u")
+	stmt.LeftJoin("public.user_data ud", "u.id = ud.user_id")
+	stmt.AndGroup(func(s *Statement) {
+		s.Where("ud.firstname SIMILIAR TO %s", search)
+		s.Or("ud.lastname SIMILIAR TO %s", search)
+		s.Or("ud.address SIMILIAR TO %s", search)
+		s.Or("ud.city SIMILIAR TO %s", search)
+	})
+	stmt.WhereGroup(func(s *Statement) {
+		s.Where("ud.firstname SIMILIAR TO %s", search)
+		s.Or("ud.lastname SIMILIAR TO %s", search)
+		s.Or("ud.address SIMILIAR TO %s", search)
+		s.Or("ud.city SIMILIAR TO %s", search)
+	})
+
+	q, args := stmt.Select("u.id, ud.firstname, ud.lastname")
+
+	fmt.Println(q)
+	fmt.Println(args)
+}
