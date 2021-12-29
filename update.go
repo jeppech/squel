@@ -18,7 +18,9 @@ func (stmt *Statement) Update() (string, []interface{}) {
 		arg_i++
 	}
 
-	q := fmt.Sprintf("UPDATE %s SET %s", stmt.table, strings.Join(fields, ","))
+	var q string
+
+	q = fmt.Sprintf("UPDATE %s SET %s", stmt.table, strings.Join(fields, ","))
 
 	var conditions []*Condition
 
@@ -26,7 +28,9 @@ func (stmt *Statement) Update() (string, []interface{}) {
 	conditions = append(conditions, stmt.conditions...)
 
 	if len(conditions) > 0 {
-		q, arg_list, _ = renderConditions(q, conditions, arg_i)
+		var new_args []interface{}
+		q, new_args, _ = renderConditions(q, conditions, arg_i)
+		arg_list = append(arg_list, new_args)
 	}
 
 	if opts.Debug {
