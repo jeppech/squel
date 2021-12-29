@@ -2,7 +2,6 @@ package squel
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -43,14 +42,12 @@ func renderCondition(cond *Condition, arg_id int, all_args []interface{}) (strin
 
 		if cond.context == "query" {
 			if cond.sub {
-				if cond.name == "WHERE" {
-					log.Panicln("WHERE-statement cannot be used inside a grouped clause")
-				}
-
-				if cond.last {
+				if cond.idx == 0 {
+					// This is the first condition of the grouped conditions.
 					clause = cond.clause
 				} else {
-					clause = fmt.Sprintf("%s %s", cond.clause, cond.name)
+					// ..OR field = %s
+					clause = fmt.Sprintf("%s %s", cond.name, cond.clause)
 				}
 			} else if !is_condition_group {
 				clause = fmt.Sprintf("%s %s", cond.name, cond.clause)
@@ -77,7 +74,7 @@ func renderGroupedConditions(condition_group *Condition, arg_id int, all_args []
 
 	for i, cond := range condition_group.conditions {
 		cond.sub = true
-		cond.last = i == len(condition_group.conditions)-1
+		cond.idx = i
 		new_q, new_arg_id, new_arg_list := renderCondition(cond, arg_id, append(all_args, arg_list...))
 		clauses = append(clauses, new_q)
 		arg_list = append(arg_list, new_arg_list...)
