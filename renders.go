@@ -30,6 +30,7 @@ func renderCondition(cond *Condition, arg_id int, all_args []interface{}) (strin
 		clause, arg_id, arg_list = renderGroupedConditions(cond, arg_id, all_args)
 	} else {
 		for _, arg := range cond.args {
+			// eliminate identical args.
 			existing_arg := argInList(arg, all_args)
 			if existing_arg >= 0 {
 				arg_bind_list = append(arg_bind_list, fmt.Sprintf("$%d", existing_arg+1))
